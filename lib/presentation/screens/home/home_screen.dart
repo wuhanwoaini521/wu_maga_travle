@@ -20,7 +20,8 @@ final selectedCityProvider = StateProvider<City>((ref) => cities.first);
 final markersProvider = StateProvider<List<ComicMapMarkerData>>((ref) => []);
 
 /// 选中的标记Provider
-final selectedMarkerProvider = StateProvider<ComicMapMarkerData?>((ref) => null);
+final selectedMarkerProvider =
+    StateProvider<ComicMapMarkerData?>((ref) => null);
 
 /// AI导游消息Provider
 final aiGuideMessagesProvider = StateProvider<List<GuideMessage>>((ref) => []);
@@ -148,7 +149,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   // ==================== 地图层 ====================
-  
+
   Widget _buildMapLayer(City city, List<ComicMapMarkerData> markers) {
     return gmaps.GoogleMap(
       initialCameraPosition: gmaps.CameraPosition(
@@ -223,22 +224,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           // 城市选择器 (漫画风格下拉)
           _buildCitySelector(city),
-          
+
           const SizedBox(width: 12),
-          
+
           // 搜索框
           Expanded(
             child: ComicTextField(
               hintText: '搜索景点、美食...',
-              prefixIcon: const Icon(Icons.search, color: ComicColors.textSecondary),
+              prefixIcon:
+                  const Icon(Icons.search, color: ComicColors.textSecondary),
               onTap: () {
-                // 打开搜索页面
+                // 显示搜索提示
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('搜索功能即将上线！')),
+                );
               },
             ),
           ),
-          
+
           const SizedBox(width: 12),
-          
+
           // 菜单按钮
           _buildMenuButton(),
         ],
@@ -273,7 +278,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildMenuButton() {
     return GestureDetector(
       onTap: () {
-        // 打开侧边栏菜单
+        // 显示菜单提示
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('菜单功能即将上线！')),
+        );
       },
       child: ComicContainer(
         padding: const EdgeInsets.all(10),
@@ -295,9 +303,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           // AI导游气泡
           _buildAIGuideBubble(),
-          
+
           const SizedBox(height: 16),
-          
+
           // 功能按钮行
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -370,6 +378,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return GestureDetector(
       onTap: () {
         // 定位到当前位置
+        _mapController?.animateCamera(
+          gmaps.CameraUpdate.newLatLngZoom(
+            gmaps.LatLng(35.6762, 139.6503), // 东京默认位置
+            13,
+          ),
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('已定位到当前城市')),
+        );
       },
       child: ComicContainer(
         width: 56,
@@ -442,10 +459,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildNavItem(IconData icon, String label, bool isSelected) {
     final color = isSelected ? ComicColors.primary : ComicColors.textSecondary;
-    
+
     return GestureDetector(
       onTap: () {
-        // 切换页面
+        if (!isSelected) {
+          // 显示功能提示
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('$label 页面即将上线！')),
+          );
+        }
       },
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -487,7 +509,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildCityItem(City city) {
     final isSelected = ref.watch(selectedCityProvider).id == city.id;
-    
+
     return GestureDetector(
       onTap: () {
         ref.read(selectedCityProvider.notifier).state = city;
@@ -507,7 +529,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           color: isSelected ? ComicColors.primary.withOpacity(0.1) : null,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? ComicColors.primary : ComicColors.outline.withOpacity(0.2),
+            color: isSelected
+                ? ComicColors.primary
+                : ComicColors.outline.withOpacity(0.2),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -519,7 +543,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 width: 60,
                 height: 60,
                 color: ComicColors.primary.withOpacity(0.2),
-                child: const Icon(Icons.location_city, color: ComicColors.primary),
+                child:
+                    const Icon(Icons.location_city, color: ComicColors.primary),
               ),
             ),
             const SizedBox(width: 16),
@@ -528,9 +553,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(city.name, style: ComicTextStyles.subtitle),
-                  Text(city.nameJp, style: ComicTextStyles.body.copyWith(
-                    color: ComicColors.textSecondary,
-                  )),
+                  Text(city.nameJp,
+                      style: ComicTextStyles.body.copyWith(
+                        color: ComicColors.textSecondary,
+                      )),
                 ],
               ),
             ),
@@ -543,23 +569,88 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _showRoutePlanning() {
-    // 打开路线规划页面
+    // 显示路线规划页面
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('路线规划'),
+        content: const Text('路线规划功能即将上线！'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showFavorites() {
-    // 打开收藏页面
+    // 显示收藏页面
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('我的收藏'),
+        content: const Text('收藏功能即将上线！'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showPhotoSpots() {
-    // 打开拍照打卡点页面
+    // 显示拍照打卡点页面
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('拍照打卡'),
+        content: const Text('拍照打卡功能即将上线！'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _startNavigation(ComicMapMarkerData marker) {
     // 调用地图导航
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('导航到 ${marker.title}'),
+        content: Text('开始导航到 ${marker.title}'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // 这里可以集成实际的导航功能
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('正在导航到 ${marker.title}...')),
+              );
+            },
+            child: const Text('开始导航'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _toggleFavorite(ComicMapMarkerData marker) {
     // 切换收藏状态
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('${marker.title} 已添加到收藏')),
+    );
   }
 }
 
@@ -592,7 +683,8 @@ class CityPickerDialog extends StatelessWidget {
                 const Spacer(),
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
-                  child: const Icon(Icons.close, color: ComicColors.textSecondary),
+                  child:
+                      const Icon(Icons.close, color: ComicColors.textSecondary),
                 ),
               ],
             ),
@@ -606,7 +698,7 @@ class CityPickerDialog extends StatelessWidget {
 
   Widget _buildCityItem(BuildContext context, City city) {
     final isSelected = city.id == selectedCity.id;
-    
+
     return GestureDetector(
       onTap: () {
         onCitySelected(city);
@@ -616,7 +708,8 @@ class CityPickerDialog extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? ComicColors.primary.withOpacity(0.1) : Colors.white,
+          color:
+              isSelected ? ComicColors.primary.withOpacity(0.1) : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? ComicColors.primary : ComicColors.outline,
@@ -634,7 +727,8 @@ class CityPickerDialog extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: ComicColors.outline, width: 2),
               ),
-              child: const Icon(Icons.location_city, color: ComicColors.primary),
+              child:
+                  const Icon(Icons.location_city, color: ComicColors.primary),
             ),
             const SizedBox(width: 16),
             Expanded(

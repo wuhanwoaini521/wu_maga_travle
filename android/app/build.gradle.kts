@@ -35,7 +35,7 @@ android {
         versionName = flutter.versionName
         
         // 高德地图 API Key (需要替换为你的 Key)
-        manifestPlaceholders["AMAP_API_KEY"] = "9cc79b900b8cfa37af4203d371dd8d3f"
+        manifestPlaceholders["AMAP_API_KEY"] = "asdasdasdas"
     }
 
     buildTypes {
