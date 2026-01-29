@@ -1,6 +1,9 @@
 /// 首页 - 地图主页
 /// 漫画风格旅游App主界面
 
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
@@ -151,6 +154,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // ==================== 地图层 ====================
 
   Widget _buildMapLayer(City city, List<ComicMapMarkerData> markers) {
+    // Web 平台需要配置 Google Maps API Key，暂时显示占位符
+    if (kIsWeb) {
+      return _buildMapPlaceholder(city);
+    }
+    
     return gmaps.GoogleMap(
       initialCameraPosition: gmaps.CameraPosition(
         target: gmaps.LatLng(city.center.latitude, city.center.longitude),
@@ -170,6 +178,46 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         // 点击地图空白处关闭信息窗口
         ref.read(selectedMarkerProvider.notifier).state = null;
       },
+    );
+  }
+  
+  /// Web 平台地图占位符
+  Widget _buildMapPlaceholder(City city) {
+    return Container(
+      color: const Color(0xFFE8E8E8),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.map_outlined,
+              size: 64,
+              color: ComicColors.primary.withOpacity(0.5),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              city.name,
+              style: ComicTextStyles.title,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '地图功能在 Web 端需要配置 API Key',
+              style: ComicTextStyles.body.copyWith(
+                color: ComicColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ComicButton(
+              text: '模拟定位',
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('已定位到当前城市')),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 

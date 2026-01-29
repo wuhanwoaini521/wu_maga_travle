@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/theme/comic_theme.dart';
-import 'presentation/screens/home/home_screen.dart'; // 使用 Google Maps 版本
+import 'presentation/screens/home/home_screen_amap.dart'; // 使用高德地图版本
 
 void main() {
   runApp(
@@ -23,7 +23,7 @@ class MangaTravelApp extends StatelessWidget {
       theme: ComicTheme.lightTheme,
       darkTheme: ComicTheme.darkTheme,
       themeMode: ThemeMode.light,
-      home: const HomeScreen(),
+      home: const HomeScreenAMap(),
     );
   }
 }

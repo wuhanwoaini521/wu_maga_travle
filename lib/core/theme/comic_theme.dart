@@ -259,12 +259,10 @@ class ComicTheme {
       primary: ComicColors.primary,
       secondary: ComicColors.secondary,
       surface: ComicColors.panelBg,
-      background: ComicColors.background,
       error: ComicColors.error,
       onPrimary: Colors.white,
       onSecondary: Colors.white,
       onSurface: ComicColors.textPrimary,
-      onBackground: ComicColors.textPrimary,
     ),
     appBarTheme: AppBarTheme(
       backgroundColor: ComicColors.primary,
@@ -278,7 +276,7 @@ class ComicTheme {
         ),
       ),
     ),
-    cardTheme: CardThemeData(
+    cardTheme: CardTheme(
       color: ComicColors.panelBg,
       elevation: 0,
       shape: ComicBorders.roundedRect,

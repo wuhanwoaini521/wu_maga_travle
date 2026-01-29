@@ -1,14 +1,17 @@
 /// 首页 - 地图主页 (高德地图版本)
-/// 漫画风格旅游App主界面 - 国内版
+/// 使用高德地图 Flutter 插件
 
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:amap_flutter_map/amap_flutter_map.dart';
-import 'package:amap_flutter_base/amap_flutter_base.dart' as amap_base;
+import 'package:amap_flutter_map/amap_flutter_map.dart' as amap;
+import 'package:amap_flutter_base/amap_flutter_base.dart' as base;
 
 import '../../../core/theme/comic_theme.dart';
 import '../../widgets/comic_style/comic_container.dart';
-import '../../widgets/comic_style/speech_bubble.dart';
+import '../../widgets/comic_style/speech_bubble.dart' as speech;
 
 // ==================== 状态管理 (Riverpod) ====================
 
@@ -16,10 +19,14 @@ import '../../widgets/comic_style/speech_bubble.dart';
 final selectedCityProvider = StateProvider<City>((ref) => cities.first);
 
 /// 地图标记点列表Provider
-final markersProvider = StateProvider<Set<Marker>>((ref) => {});
+final markersProvider = StateProvider<Set<amap.Marker>>((ref) => {});
 
 /// 选中的标记Provider
-final selectedMarkerProvider = StateProvider<Marker?>((ref) => null);
+final selectedMarkerProvider = StateProvider<amap.Marker?>((ref) => null);
+
+/// 地图控制器Provider
+final amapControllerProvider =
+    StateProvider<amap.AMapController?>((ref) => null);
 
 // ==================== 数据模型 ====================
 
@@ -27,7 +34,7 @@ class City {
   final String id;
   final String name;
   final String nameEn;
-  final amap_base.LatLng center;
+  final base.LatLng center;
   final double defaultZoom;
 
   const City({
@@ -45,58 +52,61 @@ final cities = [
     id: 'beijing',
     name: '北京',
     nameEn: 'Beijing',
-    center: amap_base.LatLng(39.909187, 116.397451),
+    center: base.LatLng(39.909187, 116.397451),
     defaultZoom: 13,
   ),
   const City(
     id: 'shanghai',
     name: '上海',
     nameEn: 'Shanghai',
-    center: amap_base.LatLng(31.230416, 121.473701),
+    center: base.LatLng(31.230416, 121.473701),
     defaultZoom: 13,
   ),
   const City(
     id: 'guangzhou',
     name: '广州',
     nameEn: 'Guangzhou',
-    center: amap_base.LatLng(23.129163, 113.264435),
+    center: base.LatLng(23.129163, 113.264435),
     defaultZoom: 13,
   ),
   const City(
     id: 'shenzhen',
     name: '深圳',
     nameEn: 'Shenzhen',
-    center: amap_base.LatLng(22.543099, 114.057868),
+    center: base.LatLng(22.543099, 114.057868),
     defaultZoom: 13,
   ),
   const City(
     id: 'chengdu',
     name: '成都',
     nameEn: 'Chengdu',
-    center: amap_base.LatLng(30.572815, 104.066801),
+    center: base.LatLng(30.572815, 104.066801),
     defaultZoom: 13,
   ),
   const City(
     id: 'hangzhou',
     name: '杭州',
     nameEn: 'Hangzhou',
-    center: amap_base.LatLng(30.274085, 120.155070),
+    center: base.LatLng(30.274085, 120.155070),
     defaultZoom: 13,
   ),
 ];
 
 // ==================== 首页主组件 ====================
 
-class HomeScreen extends ConsumerStatefulWidget {
-  const HomeScreen({super.key});
+class HomeScreenAMap extends ConsumerStatefulWidget {
+  const HomeScreenAMap({super.key});
 
   @override
-  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreenAMap> createState() => _HomeScreenAMapState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
-  AMapController? _mapController;
+class _HomeScreenAMapState extends ConsumerState<HomeScreenAMap> {
   bool _isMapLoaded = false;
+
+  // 高德地图 API Key - 请替换为您的实际 Key
+  static const String _amapAndroidKey = 'YOUR_AMAP_ANDROID_KEY';
+  static const String _amapIOSKey = 'YOUR_AMAP_IOS_KEY';
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +116,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // ===== 高德地图层 =====
+          // ===== 地图层 =====
           _buildMapLayer(selectedCity, markers),
 
           // ===== UI覆盖层 =====
@@ -132,34 +142,95 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   // ==================== 地图层 ====================
-  
-  Widget _buildMapLayer(City city, Set<Marker> markers) {
-    return AMapWidget(
-      apiKey: const AMapApiKey(
-        androidKey: 'YOUR_AMAP_ANDROID_KEY',
-        iosKey: 'YOUR_AMAP_IOS_KEY',
+
+  Widget _buildMapLayer(City city, Set<amap.Marker> markers) {
+    // Web 平台暂时显示占位符（高德地图 Web 支持需要额外配置）
+    if (kIsWeb) {
+      return _buildMapPlaceholder(city);
+    }
+
+    // Android 和 iOS 使用高德地图
+    return amap.AMapWidget(
+      apiKey: const base.AMapApiKey(
+        androidKey: _amapAndroidKey,
+        iosKey: _amapIOSKey,
       ),
-      initialCameraPosition: CameraPosition(
+      privacyStatement: const base.AMapPrivacyStatement(
+        hasContains: true,
+        hasShow: true,
+        hasAgree: true,
+      ),
+      initialCameraPosition: amap.CameraPosition(
         target: city.center,
         zoom: city.defaultZoom,
       ),
       markers: markers,
-      myLocationStyleOptions: MyLocationStyleOptions(
+      myLocationStyleOptions: amap.MyLocationStyleOptions(
         true,
         circleFillColor: ComicColors.primary.withOpacity(0.2),
         circleStrokeColor: ComicColors.primary,
         circleStrokeWidth: 2,
       ),
       compassEnabled: true,
-      mapType: MapType.normal,
+      mapType: amap.MapType.normal,
+      trafficEnabled: false,
+      buildingsEnabled: true,
       onMapCreated: (controller) {
-        _mapController = controller;
+        ref.read(amapControllerProvider.notifier).state = controller;
         setState(() => _isMapLoaded = true);
       },
       onTap: (latLng) {
-        // 点击地图空白处
+        // 点击地图空白处关闭信息窗口
         ref.read(selectedMarkerProvider.notifier).state = null;
       },
+    );
+  }
+
+  /// Web 平台地图占位符
+  Widget _buildMapPlaceholder(City city) {
+    return Container(
+      color: const Color(0xFFE8E8E8),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.map_outlined,
+              size: 64,
+              color: ComicColors.primary.withOpacity(0.5),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              city.name,
+              style: ComicTextStyles.title,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '高德地图 Web 端需要额外配置',
+              style: ComicTextStyles.body.copyWith(
+                color: ComicColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '请在 Android/iOS 端体验完整地图功能',
+              style: ComicTextStyles.body.copyWith(
+                color: ComicColors.textSecondary,
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ComicButton(
+              text: '模拟定位',
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('已定位到当前城市')),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -172,22 +243,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           // 城市选择器 (漫画风格下拉)
           _buildCitySelector(city),
-          
+
           const SizedBox(width: 12),
-          
+
           // 搜索框
           Expanded(
             child: ComicTextField(
               hintText: '搜索景点、美食...',
-              prefixIcon: const Icon(Icons.search, color: ComicColors.textSecondary),
+              prefixIcon:
+                  const Icon(Icons.search, color: ComicColors.textSecondary),
               onTap: () {
                 // 打开搜索页面
               },
             ),
           ),
-          
+
           const SizedBox(width: 12),
-          
+
           // 菜单按钮
           _buildMenuButton(),
         ],
@@ -244,9 +316,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           // AI导游气泡
           _buildAIGuideBubble(),
-          
+
           const SizedBox(height: 16),
-          
+
           // 功能按钮行
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -278,7 +350,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildAIGuideBubble() {
-    return const AIGuideBubble(
+    return const speech.AIGuideBubble(
       message: '欢迎来到北京！我是你的专属导游小漫~ 想去故宫还是长城？我可以给你规划最佳路线哦！🏯',
       guideName: '小漫导游',
       // avatarAsset: 'assets/characters/guide_avatar.png',
@@ -319,6 +391,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return GestureDetector(
       onTap: () {
         // 定位到当前位置
+        final controller = ref.read(amapControllerProvider);
+        if (controller != null) {
+          controller.moveCamera(
+            amap.CameraUpdate.zoomTo(16),
+          );
+        }
       },
       child: ComicContainer(
         width: 56,
@@ -372,7 +450,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildNavItem(IconData icon, String label, bool isSelected) {
     final color = isSelected ? ComicColors.primary : ComicColors.textSecondary;
-    
+
     return GestureDetector(
       onTap: () {
         // 切换页面
@@ -400,16 +478,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) => ComicContainer(
         margin: const EdgeInsets.all(16),
         padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('选择城市', style: ComicTextStyles.title),
-            const SizedBox(height: 16),
-            ...cities.map((city) => _buildCityItem(city)),
-          ],
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.6,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('选择城市', style: ComicTextStyles.title),
+              const SizedBox(height: 16),
+              Flexible(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: cities.length,
+                  itemBuilder: (context, index) =>
+                      _buildCityItem(cities[index]),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -417,14 +508,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildCityItem(City city) {
     final isSelected = ref.watch(selectedCityProvider).id == city.id;
-    
+
     return GestureDetector(
       onTap: () {
         ref.read(selectedCityProvider.notifier).state = city;
         // 移动地图到选中城市
-        _mapController?.moveCamera(
-          CameraUpdate.newLatLngZoom(city.center, city.defaultZoom),
-        );
+        final controller = ref.read(amapControllerProvider);
+        if (controller != null) {
+          controller.moveCamera(
+            amap.CameraUpdate.newLatLngZoom(city.center, city.defaultZoom),
+          );
+        }
         Navigator.pop(context);
       },
       child: Container(
@@ -434,7 +528,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           color: isSelected ? ComicColors.primary.withOpacity(0.1) : null,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? ComicColors.primary : ComicColors.outline.withOpacity(0.2),
+            color: isSelected
+                ? ComicColors.primary
+                : ComicColors.outline.withOpacity(0.2),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -446,7 +542,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 width: 60,
                 height: 60,
                 color: ComicColors.primary.withOpacity(0.2),
-                child: const Icon(Icons.location_city, color: ComicColors.primary),
+                child:
+                    const Icon(Icons.location_city, color: ComicColors.primary),
               ),
             ),
             const SizedBox(width: 16),
@@ -455,9 +552,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(city.name, style: ComicTextStyles.subtitle),
-                  Text(city.nameEn, style: ComicTextStyles.body.copyWith(
-                    color: ComicColors.textSecondary,
-                  )),
+                  Text(
+                    city.nameEn,
+                    style: ComicTextStyles.body.copyWith(
+                      color: ComicColors.textSecondary,
+                    ),
+                  ),
                 ],
               ),
             ),
